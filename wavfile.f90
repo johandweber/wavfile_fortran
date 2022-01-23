@@ -10,7 +10,7 @@
 
 
 module mod_wavfile
-  use iso_fortran_env
+  use  iso_fortran_env , only : int16, int32, int64, real32, real64
   implicit none
 
   type wavfile_header
@@ -33,6 +33,7 @@ module mod_wavfile
      type(wavfile_header)            :: header
      integer                         :: payload_length
      integer                         :: unit = 100
+     integer(int16)                  :: channels=1
      contains
        procedure, pass(self)         :: wf_write
        procedure, pass(self)         :: wf_close
@@ -43,6 +44,7 @@ module mod_wavfile
   integer(int32), parameter          :: HEADER_SIZE = 44_int32
   integer(int16), parameter          :: BITS_PER_SAMPLE = 16_int16
   real(real64),   parameter          :: c_pi = 3.14159265359_real64
+
   
   interface wavfile
      module procedure wavfile_open
@@ -50,13 +52,23 @@ module mod_wavfile
   
 contains
   
-  type(wavfile) function wavfile_open(filename) result(self)
-
+  type(wavfile) function wavfile_open(filename, stereo ) result(self)
     implicit none
     
     character(len=*), intent(in)     :: filename
+    logical, optional                :: stereo
     type(wavfile_header)             :: header
 
+    if (present(stereo)) then
+       if (stereo) then
+          self % channels = 2_int16
+       else
+          self % channels = 1_int16 
+       endif
+    else
+       self % channels = 1_int16
+    endif
+       
     self % header % riff_tag         = 'RIFF'
     self % header % wave_tag         = 'WAVE'
     self % header % fmt_tag          = 'fmt '         ! Leerzeichen notwendig
@@ -64,11 +76,11 @@ contains
     self % header % riff_length      =  0_int32
     self % header % fmt_length       =  16_int32
     self % header % audio_format     =  1_int16
-    self % header % num_channels     =  1_int16
+    self % header % num_channels     =  self % channels
     self % header % sample_rate      =  SAMPLES_PER_SECOND
     self % header % bits_per_sample  =  BITS_PER_SAMPLE
-    self % header % block_align      =  BITS_PER_SAMPLE/8
-    self % header % byte_rate        =  self % header % sample_rate * (self % header % bits_per_sample / 8_int16)
+    self % header % block_align      =  self % channels * ( (self % header % bits_per_sample + 7_int16) / 8_int16)
+    self % header % byte_rate        =  self % header % block_align 
     self % header % data_length      =  0_int32
 
     open (newunit = self % unit, file=filename,  form='unformatted',  access = 'stream')
@@ -82,12 +94,12 @@ contains
 
     implicit none
 
-    class(wavfile)                            :: self
-    integer(int16), dimension(:), intent(in)  :: data
-    integer(int32)                            :: length
+    class(wavfile)                              :: self
+    integer(int16), dimension(:,:), intent(in)  :: data
+    integer(int32)                              :: length
  
-    write(self % unit) data(1:length)
-    self % payload_length=self % payload_length + 2 * length
+    write(self % unit) data(1: self%channels , 1:length)
+    self % payload_length=self % payload_length + self % header % block_align * length
 
   end subroutine wf_write
 
@@ -105,11 +117,12 @@ contains
     self % header % riff_length      =  HEADER_SIZE + self % payload_length - 8
     self % header % fmt_length       =  16_int32
     self % header % audio_format     =  1_int16
-    self % header % num_channels     =  1_int16
+    self % header % num_channels     =  self % channels
     self % header % sample_rate      =  SAMPLES_PER_SECOND
     self % header % bits_per_sample  =  BITS_PER_SAMPLE
-    self % header % block_align      =  BITS_PER_SAMPLE / 8
-    self % header % byte_rate        =  self % header % sample_rate*(self % header % bits_per_sample / 8_int16)
+    self % header % block_align      =  self % channels * ( (self % header % bits_per_sample + 7_int16) / 8_int16)
+    self % header % byte_rate        =  self % header % block_align * self % header % sample_rate
+
     self % header % data_length      =  self % payload_length
     
     rewind(unit = self % unit)

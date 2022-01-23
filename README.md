@@ -1,8 +1,8 @@
 This fortran module is based on the simple sound library (written in C)
 for CSE 20211 by Douglas Thain and writes WAV audfio files.
 
-Currently, only mono files with a sampling rate of 44100 samples/s and
-a sample size of 16 bit are supported.
+Currently, only mono and stereo files with a sampling rate of 44100 samples/s and
+a sample size of 16 bit per channel are supported.
 
 Both the original library and this module are  made available under
 the Creative Commons Attribution license.
