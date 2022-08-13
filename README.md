@@ -14,6 +14,8 @@ For the complete documentation of the original library, see:
 [http://www.nd.edu/~dthain/cse20211/fall2013/wavfile](http://www.nd.edu/~dthain/courses/cse20211/fall2013/wavfile)
 
 An example for the usage in Fortran is provided in the file
-wavfile_test.f90   .
+`wavfile_test.f90` .
 
 All bugs are purely my own. 
+
+To compile the module, adapt the `Makefile` to Fortran environment and compile by running `make`.

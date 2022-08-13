@@ -5,7 +5,7 @@ program wavfile_test
   implicit none
   
   real(real32), parameter                     :: frequency1 = 440
-  real(real32), parameter                     :: frequency2 = 432
+  real(real32), parameter                     :: frequency2 = 880
   integer(int16), dimension(:,:), allocatable :: payload_stereo, payload_mono
   integer                                     :: counter
   real(real64)                                :: t             ! time
